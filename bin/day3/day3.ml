@@ -7,18 +7,20 @@ let find_expressions str =
     match str with
     | "" -> acc
     | s when String.starts_with ~prefix:"mul(" str -> (
-        match String.index_opt s ')' with
-        | Some index -> (
-            match String.sub s 4 (index - 4) |> String.split_on_char ',' with
-            | [ a; b ] -> (
-                match (int_of_string_opt a, int_of_string_opt b) with
-                | Some a, Some b ->
-                    loop
-                      ([ a * b ] @ acc)
-                      (String.sub s index (String.length s - index))
-                | _ -> loop acc (String.sub s 4 (String.length s - 4)))
-            | _ -> loop acc (String.sub s 4 (String.length s - 4)))
-        | None -> loop acc (String.sub s 4 (String.length s - 4)))
+        let index = String.index_opt s ')' in
+        match
+          ( index,
+            index
+            |> Option.map (fun index ->
+                   String.sub s 4 (index - 4)
+                   |> String.split_on_char ',' |> List.map int_of_string_opt)
+            |> Option.value ~default:[] )
+        with
+        | Some index, [ Some a; Some b ] ->
+            loop
+              ([ a * b ] @ acc)
+              (String.sub s index (String.length s - index))
+        | _, _ -> loop acc (String.sub s 4 (String.length s - 4)))
     | s -> loop acc (String.sub s 1 (String.length s - 1))
   in
   loop [] str
